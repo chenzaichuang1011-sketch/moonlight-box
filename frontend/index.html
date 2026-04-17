@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月光宝盒 - 梦幻西游藏宝阁角色估价</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.9.1/dist/index.css">
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/vue-router@4.5.0/dist/vue-router.global.prod.js"></script>
+    <script src="https://unpkg.com/element-plus@2.9.1/dist/index.full.min.js"></script>
+    <script src="https://unpkg.com/element-plus@2.9.1/dist/locale/zh-cn.min.js"></script>
+    <script src="https://unpkg.com/axios@1.7.9/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/echarts@5.5.1/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f8cff;
+            --bg-light: #f5f7fa;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f0f2f5;
+            --bg-input: #ffffff;
+            --text-primary: #303133;
+            --text-secondary: #909399;
+            --border: #ebeef5;
+            --gold: #e6a23c;
+            --gold-light: #f0c040;
+            --green: #67c23a;
+            --red: #f56c6c;
+            --blue: #409eff;
+            --purple: #9c27b0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-light); color: var(--text-primary); min-height: 100vh;
+        }
+        .el-menu { background: transparent !important; border-right: none !important; }
+        .el-menu--collapse { width: 56px !important; }
+        .el-menu-item, .el-sub-menu__title { color: var(--text-secondary) !important; font-size: 14px; }
+        .el-menu-item:hover, .el-menu-item.is-active { color: var(--gold) !important; background: rgba(230,162,60,0.08) !important; }
+        .el-card { background: var(--bg-card) !important; border: 1px solid var(--border) !important; color: var(--text-primary) !important; box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important; }
+        .el-card__header { border-bottom-color: var(--border) !important; color: var(--text-primary) !important; }
+        .el-input__wrapper, .el-select__wrapper { background: var(--bg-input) !important; box-shadow: 0 0 0 1px var(--border) inset !important; color: var(--text-primary) !important; }
+        .el-input__inner { color: var(--text-primary) !important; }
+        .el-input-number__decrease, .el-input-number__increase { background: var(--bg-card) !important; border-color: var(--border) !important; color: var(--text-secondary) !important; }
+        .el-input-number__decrease:hover, .el-input-number__increase:hover { color: var(--gold) !important; }
+        .el-textarea__inner { background: var(--bg-input) !important; box-shadow: 0 0 0 1px var(--border) inset !important; color: var(--text-primary) !important; }
+        .el-form-item__label { color: var(--text-secondary) !important; }
+        .el-descriptions__label { color: var(--text-secondary) !important; background: #fafafa !important; }
+        .el-descriptions__content { background: var(--bg-card) !important; color: var(--text-primary) !important; }
+        .el-table { --el-table-bg-color: var(--bg-card); --el-table-tr-bg-color: var(--bg-card); --el-table-header-bg-color: #fafafa; --el-table-row-hover-bg-color: var(--bg-card-hover); --el-table-border-color: var(--border); --el-table-text-color: var(--text-primary); --el-table-header-text-color: var(--text-secondary); }
+        .el-tag { border: none !important; }
+        .el-divider__text { background: var(--bg-card) !important; color: var(--text-secondary) !important; }
+        .el-empty__description p { color: var(--text-secondary) !important; }
+        .el-button--primary { --el-button-bg-color: var(--gold); --el-button-border-color: var(--gold); --el-button-text-color: #fff; --el-button-hover-bg-color: var(--gold-light); --el-button-hover-border-color: var(--gold-light); --el-button-hover-text-color: #fff; }
+        .el-dialog { --el-dialog-bg-color: var(--bg-card); --el-dialog-title-font-size: 18px; }
+        .el-dialog__title { color: var(--text-primary) !important; }
+        .el-dialog__body { color: var(--text-primary) !important; }
+        .el-message-box { --el-messagebox-bg-color: var(--bg-card); }
+        .el-switch.is-checked .el-switch__core { background-color: var(--gold) !important; border-color: var(--gold) !important; }
+        .el-badge__content { background-color: var(--red) !important; }
+        .el-slider__runway { background-color: var(--border) !important; }
+        .el-slider__bar { background-color: var(--gold) !important; }
+        .el-slider__button { border-color: var(--gold) !important; }
+
+        .app-layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 200px; background: #ffffff;
+            border-right: 1px solid var(--border);
+            padding: 20px 0; flex-shrink: 0;
+            display: flex; flex-direction: column;
+            transition: width 0.25s ease;
+            position: relative; z-index: 10;
+            overflow: hidden;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+        }
+        .sidebar.collapsed { width: 56px; }
+        .sidebar.collapsed .logo p,
+        .sidebar.collapsed .logo h1 span { display: none; }
+        .sidebar.collapsed .logo h1 { font-size: 22px; }
+        .sidebar.collapsed .el-menu-item span { display: none; }
+        .sidebar-toggle {
+            position: absolute; top: 16px; right: -12px;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--bg-card); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 10px; color: var(--text-secondary);
+            z-index: 20; transition: all 0.2s;
+        }
+        .sidebar-toggle:hover { background: var(--bg-card-hover); color: var(--gold); border-color: rgba(230,162,60,0.4); }
+        .logo { text-align: center; padding: 0 20px 24px; transition: all 0.25s; }
+        .logo h1 { font-size: 20px; color: var(--gold); margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
+        .logo p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+        .main-content { flex: 1; padding: 24px; overflow-y: auto; max-height: 100vh; }
+        .page-title { font-size: 22px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .gold { color: var(--gold); }
+        .green { color: var(--green); }
+        .red { color: var(--red); }
+        .blue { color: var(--blue); }
+        .purple { color: var(--purple); }
+        .mb-20 { margin-bottom: 20px; }
+        .mb-12 { margin-bottom: 12px; }
+        .mt-20 { margin-top: 20px; }
+        .text-center { text-align: center; }
+        .text-sm { font-size: 13px; }
+        .text-secondary { color: var(--text-secondary); }
+
+        /* 卡片悬停动效 */
+        .el-card { transition: box-shadow 0.2s, transform 0.2s; }
+        .el-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important; }
+        .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.12) !important; }
+
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; transition: all 0.2s; cursor: default; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stat-card:hover { border-color: rgba(230,162,60,0.25); background: var(--bg-card-hover); transform: translateY(-1px); }
+        .stat-card .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+        .stat-card .value { font-size: 22px; font-weight: 600; }
+        .price-big { font-size: 38px; font-weight: 700; color: var(--gold); letter-spacing: -1px; }
+        .price-unit { font-size: 14px; color: var(--text-secondary); margin-left: 4px; }
+
+        .url-input-box { display: flex; gap: 12px; margin-bottom: 20px; }
+        .url-input-box .el-input { flex: 1; }
+
+        .role-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+        .role-avatar { width: 64px; height: 64px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; border: 2px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+        .role-info h2 { font-size: 22px; }
+        .role-info .meta { color: var(--text-secondary); margin-top: 4px; }
+
+        .account-status { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .account-valid { background: rgba(103,194,58,0.12); color: #67c23a; }
+        .account-invalid { background: rgba(245,108,108,0.12); color: #f56c6c; }
+        .account-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; background: #fafafa; }
+        .account-card .info h3 { font-size: 15px; margin-bottom: 4px; }
+        .account-card .info p { font-size: 12px; color: var(--text-secondary); }
+
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+
+        .cookie-hint { background: #fffbe6; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .cookie-hint h4 { margin-bottom: 8px; color: var(--gold); }
+        .cookie-hint ol { padding-left: 20px; color: var(--text-secondary); font-size: 13px; }
+        .cookie-hint li { margin-bottom: 6px; }
+
+        /* ========== 推送监控面板专用 ========== */
+        .push-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .push-card:hover { border-color: rgba(230,162,60,0.3); background: var(--bg-card-hover); }
+        .push-card.unread { border-left: 3px solid var(--gold); }
+        .push-card .top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .push-card .role-info-push { display: flex; align-items: center; gap: 12px; }
+        .push-card .role-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+        .push-card .role-detail h3 { font-size: 15px; margin-bottom: 3px; }
+        .push-card .role-detail .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .push-card .price-section { text-align: right; }
+        .push-card .sell-price { font-size: 18px; font-weight: 600; color: var(--gold); }
+        .push-card .est-price { font-size: 12px; color: var(--text-secondary); }
+        .push-card .bottom-row { display: flex; justify-content: space-between; align-items: center; }
+        .push-card .cost-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+        .cost-great { background: rgba(103,194,58,0.12); color: #67c23a; }
+        .cost-good { background: rgba(64,158,255,0.12); color: #409eff; }
+        .cost-normal { background: rgba(230,162,60,0.12); color: #e6a23c; }
+        .push-card .actions { display: flex; gap: 8px; }
+        .push-card .time-info { font-size: 11px; color: var(--text-secondary); }
+        .push-card .price-drop { font-size: 12px; color: var(--red); font-weight: 600; }
+        .push-card .summary-row { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #eee; }
+        .push-card .attr-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+        .push-card .attr-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #f5f7fa; color: var(--text-secondary); }
+        .push-card .attr-badge .val { color: var(--text-primary); font-weight: 600; }
+
+        .task-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .task-card .info h3 { font-size: 15px; margin-bottom: 4px; }
+        .task-card .info p { font-size: 12px; color: var(--text-secondary); }
+
+        .monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .tab-bar { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .tab-item { padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab-item:hover { color: var(--text-primary); }
+        .tab-item.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+        .notification-enter-active { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* ===== 估价报告 - 仿参考图风格 ===== */
+        .eval-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .eval-role-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: #4f8cff;
+            margin-bottom: 8px;
+        }
+        .eval-role-meta {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 16px;
+            padding-left: 8px;
+            border-left: 3px solid #4f8cff;
+        }
+        .eval-price-list {
+            margin-bottom: 20px;
+        }
+        .eval-price-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 14px;
+        }
+        .eval-price-row:last-child { border-bottom: none; }
+        .eval-price-row .label {
+            color: #666;
+            width: 90px;
+            flex-shrink: 0;
+        }
+        .eval-price-row .value {
+            font-weight: 600;
+            color: #333;
+        }
+        .eval-price-row .value.sell { color: #e6a23c; }
+        .eval-price-row .value.total { color: #4f8cff; }
+        .eval-price-row .value.role { color: #52c41a; }
+        .eval-price-row .value.items { color: #722ed1; }
+        .eval-price-row .warning-icon {
+            color: #faad14;
+            margin-left: 6px;
+            font-size: 14px;
+        }
+
+        /* 折叠面板 - 仿参考图 */
+        .eval-collapse {
+            border: none;
+            background: transparent;
+        }
+        .eval-collapse .el-collapse-item {
+            margin-bottom: 4px;
+            border: none;
+            background: transparent;
+        }
+        .eval-collapse .el-collapse-item__header {
+            height: 44px;
+            line-height: 44px;
+            padding: 0 12px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .eval-collapse .el-collapse-item__header:hover {
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .eval-collapse .el-collapse-item__header.is-active {
+            color: #4f8cff;
+        }
+        .eval-collapse .el-collapse-item__arrow {
+            margin: 0 8px 0 0;
+            color: #999;
+        }
+        .eval-collapse .el-collapse-item__content {
+            padding: 12px 0 12px 32px;
+            background: transparent;
+            border: none;
+        }
+        .eval-collapse .collapse-price {
+            margin-left: auto;
+            color: #666;
+            font-weight: 500;
+        }
+        .eval-collapse .el-collapse-item__header.is-active .collapse-price {
+            color: #4f8cff;
+        }
+
+        /* 嵌套子面板 */
+        .eval-sub-collapse {
+            margin-top: 8px;
+        }
+        .eval-sub-collapse .el-collapse-item__header {
+            height: 36px;
+            line-height: 36px;
+            padding: 0 8px;
+            font-size: 13px;
+            color: #666;
+            background: #fafafa;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+        .eval-sub-collapse .el-collapse-item__content {
+            padding: 8px 0;
+        }
+
+        /* 明细表格 */
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .detail-table th {
+            background: #f8f9fa;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        .detail-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+        }
+        .detail-table tr:last-child td { border-bottom: none; }
+        .detail-table .td-name { font-weight: 500; }
+        .detail-table .td-sub { color: #999; font-size: 12px; }
+        .detail-table .td-val {
+            text-align: right;
+            color: #e6a23c;
+            font-weight: 600;
+        }
+        .detail-table .td-level {
+            color: #4f8cff;
+            font-weight: 500;
+        }
+
+        /* 修炼明细表格 */
+        .cult-table-section {
+            margin-bottom: 16px;
+        }
+        .cult-table-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+            padding-left: 8px;
+            border-left: 2px solid #4f8cff;
+        }
+        .cult-table-title.pet {
+            border-left-color: #52c41a;
+        }
+
+        /* 空状态 */
+        .panel-empty {
+            color: #999;
+            font-size: 13px;
+            text-align: center;
+            padding: 24px;
+        }
+
+        /* 饼图区域 */
+        .eval-chart-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .eval-chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .eval-chart-wrap {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .eval-chart-legend {
+            flex: 1;
+            min-width: 180px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .legend-name {
+            flex: 1;
+            font-size: 13px;
+            color: #666;
+        }
+        .legend-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        .legend-pct {
+            font-size: 12px;
+            color: #999;
+            width: 40px;
+            text-align: right;
+        }
+
+        /* ===== URL 智能提示卡片 ===== */
+        .url-hint-card {
+            border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.7;
+        }
+        .url-hint-warn {
+            background: #fffbe6; border: 1px solid #ffe58f;
+        }
+        .url-hint-header {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 600; color: #e6a23c; margin-bottom: 8px;
+        }
+        .url-hint-body { color: var(--text-primary); }
+        .url-hint-solution { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+        .solution-item {
+            display: flex; align-items: flex-start; gap: 8px;
+            background: #f5f7fa; border-radius: 6px; padding: 8px 10px;
+        }
+        .solution-tag {
+            font-size: 11px; font-weight: 700; border-radius: 4px;
+            padding: 1px 6px; flex-shrink: 0; margin-top: 1px;
+        }
+        .solution-recommended .solution-tag { background: rgba(64,158,255,0.15); color: #409eff; }
+        .solution-item:not(.solution-recommended) .solution-tag { background: #eee; color: var(--text-secondary); }
+
+        /* ===== 多行错误块 ===== */
+        .error-block {
+            display: flex; gap: 10px; align-items: flex-start;
+            background: rgba(245,108,108,0.08); border: 1px solid rgba(245,108,108,0.3);
+            border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.8;
+        }
+        .error-block-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+        .error-block-body { flex: 1; }
+
+        .eval-breakdown {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px; margin-bottom: 20px;
+        }
+        .breakdown-item {
+            background: #fafafa; border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px 14px;
+            display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.2s;
+        }
+        .breakdown-item:hover { background: #f0f2f5; border-color: rgba(230,162,60,0.2); }
+        .breakdown-item .bd-label { font-size: 13px; color: var(--text-secondary); }
+        .breakdown-item .bd-label .bd-sub { color: var(--gold); font-size: 12px; margin-left: 4px; }
+        .breakdown-item .bd-val { font-size: 16px; font-weight: 700; color: var(--gold); }
+        .breakdown-item .bd-val.zero { color: var(--text-secondary); font-weight: 400; font-size: 13px; }
+        .breakdown-item .bd-icon { font-size: 18px; margin-right: 8px; }
+        .breakdown-group-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 12px 0 8px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .breakdown-group-title .group-total {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        /* 修炼分类样式 */
+        .cult-section {
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e8ecf0;
+        }
+        .cult-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e6a23c;
+        }
+        .cult-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .cult-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+        }
+        .cult-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .cult-level {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1890ff;
+            margin-bottom: 4px;
+        }
+        .cult-price {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e6a23c;
+        }
+        .cult-total {
+            text-align: right;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            padding-top: 8px;
+            border-top: 1px dashed #ddd;
+        }
+
+        .eval-chart-wrap {
+            display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .eval-chart-wrap .chart-box { flex: 0 0 260px; height: 260px; }
+        .eval-chart-wrap .chart-legend { flex: 1; min-width: 200px; }
+        .legend-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .legend-item:last-child { border-bottom: none; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .legend-name { font-size: 13px; color: var(--text-secondary); flex: 1; }
+        .legend-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .legend-pct { font-size: 12px; color: var(--text-secondary); margin-left: 4px; }
+
+        /* ===== 已采集角色页 ===== */
+        .roles-filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .role-row-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 16px;
+            transition: all 0.2s; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .role-row-card:hover { border-color: rgba(230,162,60,0.3); background: var(--bg-card-hover); transform: translateX(2px); }
+        .role-row-card .r-school { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; flex-shrink:0; }
+        .role-row-card .r-main { flex: 1; min-width: 0; }
+        .role-row-card .r-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .role-row-card .r-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .role-row-card .r-price { text-align: right; flex-shrink: 0; }
+        .role-row-card .r-sell { font-size: 16px; font-weight: 700; color: var(--gold); }
+        .role-row-card .r-time { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 56px; }
+            .sidebar .logo p, .sidebar .logo h1 span { display: none; }
+            .sidebar-toggle { display: none; }
+            .main-content { padding: 12px; }
+            .stat-cards { grid-template-columns: repeat(2, 1fr); }
+            .push-card .top-row { flex-direction: column; }
+            .push-card .price-section { text-align: left; margin-top: 8px; }
+            .eval-chart-wrap { flex-direction: column; }
+            .eval-chart-wrap .chart-box { flex: 0 0 220px; height: 220px; width: 100%; }
+            .cult-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-layout">
+            <!-- 侧边栏 -->
+            <div :class="['sidebar', sidebarCollapsed ? 'collapsed' : '']">
+                <div class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed" :title="sidebarCollapsed ? '展开菜单' : '收起菜单'">
+                    {{ sidebarCollapsed ? '▶' : '◀' }}
+                </div>
+                <div class="logo">
+                    <h1>🔮<span> 月光宝盒</span></h1>
+                    <p>角色估价平台</p>
+                </div>
+                <el-menu :default-active="$route.path" router :collapse="sidebarCollapsed" :collapse-transition="false">
+                    <el-menu-item index="/">
+                        <span>🏠</span><template #title> 首页</template>
+                    </el-menu-item>
+                    <el-menu-item index="/crawl">
+                        <span>🔍</span><template #title> 采集估价</template>
+                    </el-menu-item>
+                    <el-menu-item index="/monitor">
+                        <span>📡</span><template #title> 推送监控</template>
+                    </el-menu-item>
+                </el-menu>
+            </div>
+
+            <!-- 主内容 -->
+            <div class="main-content">
+                <router-view></router-view>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // API 地址配置：支持开发服务器、直接打开HTML文件、和生产环境
+    const API = (window.location.protocol === 'file:' || window.location.port === '5173' || window.location.port === '8080' || window.location.port === '8001') 
+        ? 'http://127.0.0.1:8001' 
+        : '';
+
+    // ============ 首页 ============
+    const HomePage = {
+        template: `
+        <div>
+            <h1 class="page-title">🔮 月光宝盒</h1>
+
+            <!-- 账号状态提示 -->
+            <el-card v-if="!accountValid" class="mb-20" style="border-color: #ffd666; background: #fffbe6">
+                <template #header>
+                    <span style="color: #e6a23c">⚠️ 账号未登录</span>
+                </template>
+                <p>采集和监控需要绑定网易账号以获取完整数据。</p>
+                <p class="text-secondary" style="font-size: 12px; margin-top: 4px">💡 推荐使用<strong>移动端</strong>登录，Cookie 有效期更长</p>
+                <div style="margin-top: 12px; display: flex; gap: 8px">
+                    <el-button type="primary" @click="showLoginModal = true">📱 移动端扫码登录</el-button>
+                    <el-button @click="checkAccountStatus">🔄 检查状态</el-button>
+                </div>
+            </el-card>
+
+            <!-- 风控提示横幅 -->
+            <el-alert
+                v-if="riskControlDetected"
+                title="⚠️ 账号被风控"
+                type="warning"
+                :closable="false"
+                show-icon
+                class="mb-20"
+                style="border-radius:8px"
+            >
+                <template #default>
+                    <div style="margin-top:6px">
+                        <p style="margin-bottom:8px">网易要求进行将军令验证。请按以下步骤操作：</p>
+                        <ol style="margin:0 0 10px 16px;padding:0;line-height:1.8">
+                            <li>在 <strong>Edge 浏览器</strong>中打开藏宝阁，完成将军令验证</li>
+                            <li>验证通过后，点击下方「刷新Cookie」按钮</li>
+                            <li>等待提示「刷新成功」后即可继续使用</li>
+                        </ol>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <el-button type="warning" size="small" @click="refreshCookie" :loading="refreshingCookie">
+                                🔑 刷新Cookie
+                            </el-button>
+                            <el-button type="primary" size="small" plain
+                                onclick="window.open('https://xyq.cbg.163.com/','_blank')">
+                                🌐 打开藏宝阁
+                            </el-button>
+                            <span v-if="refreshCookieMsg" :style="{color: refreshCookieOk ? '#67c23a' : '#f56c6c', fontSize:'13px'}">
+                                {{ refreshCookieMsg }}
+                            </span>
+                        </div>
+                    </div>
+                </template>
+            </el-alert>
+
+            <el-card v-if="accountValid" class="mb-20" style="border-color: #67c23a; background: #f6ffed">
+                <template #header>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span style="color: #67c23a">✅ 账号已登录</span>
+                        <div style="display:flex;gap:8px">
+                            <el-button size="small" type="warning" plain @click="refreshCookie" :loading="refreshingCookie">🔑 刷新Cookie</el-button>
+                            <el-button size="small" type="primary" plain @click="showLoginModal = true">🔄 切换账号</el-button>
+                            <el-button size="small" type="danger" plain @click="logoutAccount">🚪 退出登录</el-button>
+                        </div>
+                    </div>
+                </template>
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                    <div>
+                        <p>
+                            当前账号: <strong>{{ accountNickname || '未知' }}</strong>
+                            <el-tag type="success" size="small" style="margin-left: 8px">有效</el-tag>
+                        </p>
+                        <p class="text-sm text-secondary" style="margin-top: 4px">最后使用: {{ accountLastUsed }}</p>
+                        <p v-if="refreshCookieMsg" class="text-sm" :style="{color: refreshCookieOk ? '#67c23a' : '#f56c6c', marginTop:'4px'}">
+                            {{ refreshCookieMsg }}
+                        </p>
+                    </div>
+                    <el-button size="small" @click="checkAccountStatus" :loading="checkingStatus">🔁 刷新状态</el-button>
+                </div>
+            </el-card>
+
+            <el-card class="mb-20">
+                <p style="font-size:16px;margin-bottom:12px;">🎮 梦幻西游藏宝阁角色估价</p>
+                <p class="text-secondary">粘贴藏宝阁角色链接，快速获取估价分析</p>
+                <div class="url-input-box mt-20">
+                    <el-input v-model="url" placeholder="粘贴藏宝阁角色链接，如：https://xyq.cbg.163.com/equip?s=9&eid=xxx" size="large" clearable @keyup.enter="goCrawl" />
+                    <el-button type="primary" size="large" @click="goCrawl" :loading="loading">🔍 采集估价</el-button>
+                </div>
+                <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" class="mt-20" />
+            </el-card>
+
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <div class="label">支持服务器</div>
+                    <div class="value gold">{{ stats.servers || '-' }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">监控任务</div>
+                    <div class="value blue">{{ stats.activeTasks || 0 }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">已推送角色</div>
+                    <div class="value green">{{ stats.totalRecords || 0 }}</div>
+                </div>
+            </div>
+
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-card hoverable @click="$router.push('/crawl')" style="cursor:pointer;text-align:center;padding:20px">
+                        <div style="font-size:48px;margin-bottom:12px">🔍</div>
+                        <h3 style="color:var(--gold)">采集估价</h3>
+                        <p class="text-secondary" style="margin-top:8px">粘贴角色链接，获取详细估价分析</p>
+                    </el-card>
+                </el-col>
+                <el-col :span="12">
+                    <el-card hoverable @click="$router.push('/monitor')" style="cursor:pointer;text-align:center;padding:20px">
+                        <div style="font-size:48px;margin-bottom:12px">📡</div>
+                        <h3 style="color:var(--gold)">推送监控</h3>
+                        <p class="text-secondary" style="margin-top:8px">自动监控，高性价比角色实时推送</p>
+                    </el-card>
+                </el-col>
+            </el-row>
+
+            <!-- 登录弹窗 -->
+            <el-dialog v-model="showLoginModal" title="📱 移动端扫码登录" width="600px" @close="resetLoginModal">
+                <div style="text-align: center; padding: 20px 0">
+                    <div v-if="loginStatus === 'waiting'" style="padding: 20px 0">
+                        <div style="background:#f0f9ff;border-radius:10px;padding:16px 20px;margin-bottom:20px;text-align:left">
+                            <p style="font-weight:600;margin-bottom:8px;color:#409eff">📋 登录流程说明</p>
+                            <ol style="margin:0;padding-left:20px;color:#555;font-size:13px;line-height:2">
+                                <li>点击下方按钮，浏览器会自动打开<strong>梦幻西游手游藏宝阁移动端</strong>登录页</li>
+                                <li>使用手机 APP 扫描二维码，或输入网易账号密码</li>
+                                <li>登录成功后系统自动保存 Cookie，关闭浏览器即可</li>
+                            </ol>
+                        </div>
+                        <div style="background:#fff7e6;border-radius:8px;padding:10px 16px;margin-bottom:20px;text-align:left;font-size:12px;color:#e6a23c">
+                            💡 <strong>移动端 Cookie 有效期更长</strong>，建议使用手机 APP 扫码登录，体验更佳
+                        </div>
+                        <el-button type="primary" size="large" @click="startLogin" :loading="startingLogin">
+                            📱 点击启动浏览器登录
+                        </el-button>
+                    </div>
+                    <div v-else-if="loginStatus === 'scanning'" style="padding: 40px">
+                        <el-progress type="circle" :percentage="loginProgress" status="active" />
+                        <p style="margin-top: 20px; font-size: 15px"><strong>等待浏览器中完成登录...</strong></p>
+                        <p class="text-secondary" style="font-size: 12px; margin-top: 8px">请在自动打开的浏览器窗口中扫码登录</p>
+                        <p class="text-secondary" style="font-size: 12px; margin-top: 4px">登录成功后页面会自动更新</p>
+                        <div style="margin-top: 16px">
+                            <el-button text @click="cancelLogin">取消登录</el-button>
+                        </div>
+                    </div>
+                    <div v-else-if="loginStatus === 'success'" style="padding: 40px 0">
+                        <div style="font-size: 48px; margin-bottom: 12px">✅</div>
+                        <p><strong>移动端登录成功！</strong></p>
+                        <p class="text-secondary" style="margin-top: 8px">Cookie 已保存，可以开始采集和监控</p>
+                    </div>
+                    <div v-else-if="loginStatus === 'error'" style="padding: 40px 0">
+                        <div style="font-size: 48px; margin-bottom: 12px">❌</div>
+                        <p><strong>登录失败</strong></p>
+                        <p class="text-secondary" style="margin-top: 8px">{{ loginError }}</p>
+                        <el-button type="primary" @click="resetLoginModal">重新登录</el-button>
+                    </div>
+                </div>
+                <template #footer v-if="loginStatus !== 'success'">
+                    <el-button @click="showLoginModal = false">关闭</el-button>
+                </template>
+                <template #footer v-else>
+                    <el-button type="primary" @click="showLoginModal = false">完成</el-button>
+                </template>
+            </el-dialog>
+        </div>`,
+        data() { 
+            return { 
+                url: '', 
+                loading: false, 
+                error: '', 
+                stats: {},
+                accountValid: false,
+                accountNickname: '',
+                accountLastUsed: '',
+                checkingStatus: false,
+                showLoginModal: false,
+                loginStatus: 'waiting', // waiting, scanning, success, error
+                loginProgress: 0,
+                loginError: '',
+                startingLogin: false,
+                currentSessionId: null,
+                loginCheckTimer: null,
+                // 风控相关
+                riskControlDetected: false,
+                refreshingCookie: false,
+                refreshCookieMsg: '',
+                refreshCookieOk: false,
+            }; 
+        },
+        async mounted() {
+            await Promise.all([this.checkAccountStatus(), this.loadStats()]);
+        },
+        beforeUnmount() {
+            if (this.loginCheckTimer) clearTimeout(this.loginCheckTimer);
+        },
+        methods: {
+            async checkAccountStatus() {
+                this.checkingStatus = true;
+                try {
+                    const r = await axios.get(API + '/api/crawl/account/status');
+                    this.accountValid = r.data.valid_accounts > 0;
+                    if (this.accountValid && r.data.accounts && r.data.accounts.length > 0) {
+                        const acc = r.data.accounts[0];
+                        this.accountNickname = acc.nickname || '未知';
+                        if (acc.last_used_at) {
+                            const d = new Date(acc.last_used_at);
+                            this.accountLastUsed = d.toLocaleString();
+                        }
+                        // 风控检测：is_valid=false 且有 risk_control 标记
+                        if (acc.risk_control) {
+                            this.riskControlDetected = true;
+                        } else if (this.accountValid) {
+                            this.riskControlDetected = false;
+                        }
+                    }
+                } catch(e) {
+                    this.accountValid = false;
+                } finally {
+                    this.checkingStatus = false;
+                }
+            },
+            async refreshCookie() {
+                this.refreshingCookie = true;
+                this.refreshCookieMsg = '';
+                try {
+                    const r = await axios.post(API + '/api/crawl/account/refresh-cookie');
+                    if (r.data.success) {
+                        this.refreshCookieOk = true;
+                        this.refreshCookieMsg = `✅ ${r.data.msg}`;
+                        this.riskControlDetected = false;
+                        // 延迟刷新状态
+                        setTimeout(() => this.checkAccountStatus(), 800);
+                        setTimeout(() => { this.refreshCookieMsg = ''; }, 6000);
+                    } else {
+                        this.refreshCookieOk = false;
+                        this.refreshCookieMsg = `❌ ${r.data.msg}`;
+                    }
+                } catch(e) {
+                    this.refreshCookieOk = false;
+                    this.refreshCookieMsg = '❌ 刷新失败：' + (e.response?.data?.detail || e.message);
+                } finally {
+                    this.refreshingCookie = false;
+                }
+            },
+            async logoutAccount() {
+                try {
+                    await this.$confirm('确定要退出登录吗？退出后采集功能将不可用。', '退出登录', {
+                        confirmButtonText: '确定退出',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    });
+                    await axios.post(API + '/api/crawl/account/logout');
+                    this.accountValid = false;
+                    this.accountNickname = '';
+                    this.accountLastUsed = '';
+                    this.$message.success('已退出登录');
+                } catch(e) {
+                    if (e !== 'cancel') this.$message.error('退出失败：' + (e.response?.data?.detail || e.message));
+                }
+            },
+            async loadStats() {
+                try {
+                    const s = await axios.get(API + '/api/crawl/servers');
+                    this.stats.servers = s.data.total;
+                } catch(e) {}
+                try {
+                    const m = await axios.get(API + '/api/monitor/status');
+                    this.stats.activeTasks = m.data.active_tasks;
+                    this.stats.totalRecords = m.data.total_records;
+                } catch(e) {}
+            },
+            async startLogin() {
+                this.startingLogin = true;
+                try {
+                    const r = await axios.post(API + '/api/crawl/account/qr-login/start', {});
+                    if (r.data.success) {
+                        this.currentSessionId = r.data.session_id;
+                        this.loginStatus = 'scanning';
+                        this.pollLoginStatus();
+                    } else {
+                        this.loginStatus = 'error';
+                        this.loginError = r.data.error || '启动失败';
+                    }
+                } catch(e) {
+                    this.loginStatus = 'error';
+                    this.loginError = e.response?.data?.detail || '启动失败：' + e.message;
+                }
+                this.startingLogin = false;
+            },
+            pollLoginStatus() {
+                if (!this.currentSessionId) return;
+                this.loginCheckTimer = setTimeout(async () => {
+                    try {
+                        const r = await axios.get(API + '/api/crawl/account/qr-login/status/' + this.currentSessionId);
+                        const status = r.data.status;
+                        
+                        if (status === 'success') {
+                            this.loginStatus = 'success';
+                            this.$message.success('✅ 账号登录成功！');
+                            setTimeout(() => {
+                                this.showLoginModal = false;
+                                this.checkAccountStatus();
+                                this.resetLoginModal();
+                            }, 1500);
+                        } else if (status === 'error' || status === 'cancelled') {
+                            this.loginStatus = 'error';
+                            this.loginError = r.data.message || '登录失败';
+                        } else {
+                            // 继续轮询
+                            this.loginProgress = Math.min(this.loginProgress + 10, 90);
+                            this.pollLoginStatus();
+                        }
+                    } catch(e) {
+                        this.loginStatus = 'error';
+                        this.loginError = '检查状态失败';
+                    }
+                }, 1000);
+            },
+            cancelLogin() {
+                if (this.currentSessionId) {
+                    axios.post(API + '/api/crawl/account/qr-login/cancel/' + this.currentSessionId).catch(() => {});
+                }
+                this.resetLoginModal();
+            },
+            resetLoginModal() {
+                this.showLoginModal = false;
+                this.loginStatus = 'waiting';
+                this.loginProgress = 0;
+                this.loginError = '';
+                this.currentSessionId = null;
+                if (this.loginCheckTimer) clearTimeout(this.loginCheckTimer);
+            },
+            goCrawl() {
+                if (!this.url.trim()) { this.error = '请输入藏宝阁链接'; return; }
+                this.error = '';
+                this.$router.push('/crawl?url=' + encodeURIComponent(this.url.trim()));
+            }
+        }
+    };
+
+    // ============ 推送监控（核心页面）============
+    const MonitorPage = {
+        template: `
+        <div>
+            <div class="monitor-header">
+                <h1 class="page-title" style="margin-bottom:0">
+                    📡 推送监控
+                    <span v-if="activeTasks > 0" style="font-size:14px;color:var(--green)"><span class="live-dot"></span> 运行中</span>
+                </h1>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <el-badge :value="unreadCount" :hidden="unreadCount === 0" type="danger">
+                        <el-button @click="markAllRead" :disabled="unreadCount === 0">全部已读</el-button>
+                    </el-badge>
+                    <el-button type="primary" @click="showCreateDialog = true">➕ 新建监控</el-button>
+                </div>
+            </div>
+
+            <!-- 统计 -->
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <div class="label">运行中任务</div>
+                    <div class="value green">{{ activeTasks }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">总监控任务</div>
+                    <div class="value blue">{{ tasks.length }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">已推送角色</div>
+                    <div class="value gold">{{ records.length }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">未读推送</div>
+                    <div class="value" :class="unreadCount > 0 ? 'red' : ''">{{ unreadCount }}</div>
+                </div>
+            </div>
+
+            <!-- Tab 切换 -->
+            <div class="tab-bar">
+                <div :class="['tab-item', tab === 'push' ? 'active' : '']" @click="tab = 'push'">
+                    🔔 推送记录 <span v-if="unreadCount > 0" style="color:var(--red)">({{ unreadCount }})</span>
+                </div>
+                <div :class="['tab-item', tab === 'tasks' ? 'active' : '']" @click="tab = 'tasks'">
+                    📋 监控任务 ({{ tasks.length }})
+                </div>
+            </div>
+
+            <!-- 推送记录列表 -->
+            <div v-if="tab === 'push'">
+                <div v-if="records.length === 0" class="text-center" style="padding:60px 0">
+                    <div style="font-size:48px;margin-bottom:12px">📡</div>
+                    <p class="text-secondary">暂无推送记录</p>
+                    <p class="text-sm text-secondary" style="margin-top:8px">创建监控任务后，系统会自动发现性价比角色并推送</p>
+                </div>
+
+                <transition-group name="notification">
+                    <div v-for="r in records" :key="r.id" :class="['push-card', r.is_read ? '' : 'unread']">
+                        <div class="top-row">
+                            <div class="role-info-push">
+                                <div class="role-icon">{{ r.school ? r.school[0] : '?' }}</div>
+                                <div class="role-detail">
+                                    <h3>{{ r.role_name || '未知角色' }}</h3>
+                                    <div class="tags">
+                                        <el-tag size="small" type="info">{{ r.school }}</el-tag>
+                                        <el-tag size="small" type="warning">Lv.{{ r.level }}</el-tag>
+                                        <el-tag v-if="r.zhuan_zhi && r.zhuan_zhi !== 'normal'" size="small">{{ zzLabel(r.zhuan_zhi) }}</el-tag>
+                                        <el-tag v-for="tag in (r.highlight_tags || [])" :key="tag" size="small" :type="tagColor(tag)">{{ tag }}</el-tag>
+                                        <el-tag v-if="r.price_drop_amount > 0" size="small" type="danger">降价 ¥{{ r.price_drop_amount }}</el-tag>
+                                    </div>
+                                    <!-- 角色摘要 -->
+                                    <div v-if="r.role_summary" class="text-sm text-secondary" style="margin-top:4px;line-height:1.5">
+                                        {{ r.role_summary }}
+                                    </div>
+                                    <!-- 宠物/锦衣/祥瑞 -->
+                                    <div v-if="(r.pet_type_labels && r.pet_type_labels.length) || (r.clothes_names && r.clothes_names.length) || (r.xiangrui_names && r.xiangrui_names.length)" class="text-sm" style="margin-top:3px">
+                                        <span v-if="r.pet_type_labels && r.pet_type_labels.length" class="text-secondary">🐾 {{ r.pet_type_labels.join('、') }}</span>
+                                        <span v-if="r.clothes_names && r.clothes_names.length" style="margin-left:8px" class="text-secondary">👔 {{ r.clothes_names.join('、') }}</span>
+                                        <span v-if="r.xiangrui_names && r.xiangrui_names.length" style="margin-left:8px" class="text-secondary">🦚 {{ r.xiangrui_names.join('、') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="price-section">
+                                <div class="sell-price">¥{{ formatPrice(r.selling_price) }}</div>
+                                <div class="est-price">估价 ¥{{ formatPrice(r.estimated_price) }}</div>
+                            </div>
+                        </div>
+                        <div class="bottom-row">
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <span :class="['cost-badge', costClass(r.cost_effectiveness)]">
+                                    🎯 性价比 {{ (r.cost_effectiveness * 100).toFixed(0) }}%
+                                </span>
+                                <span v-if="r.total_cultivation" class="text-sm text-secondary">修{{ r.total_cultivation }}</span>
+                                <span v-if="r.pet_total_cultivation" class="text-sm text-secondary">宠修{{ r.pet_total_cultivation }}</span>
+                                <span class="time-info">{{ formatTime(r.first_seen_at) }}</span>
+                            </div>
+                            <div class="actions">
+                                <el-button size="small" type="primary" @click="goCbgUrl(r.cbg_url)" plain>🔗 藏宝阁</el-button>
+                                <el-button size="small" @click="goEstimate(r)" plain>🔍 详情</el-button>
+                                <el-button size="small" @click="markRead(r.id)" v-if="!r.is_read" type="warning" plain>已读</el-button>
+                            </div>
+                        </div>
+                    </div>
+                </transition-group>
+            </div>
+
+            <!-- 监控任务列表 -->
+            <div v-if="tab === 'tasks'">
+                <div v-if="tasks.length === 0" class="text-center" style="padding:60px 0">
+                    <div style="font-size:48px;margin-bottom:12px">📋</div>
+                    <p class="text-secondary">暂无监控任务</p>
+                    <el-button type="primary" style="margin-top:16px" @click="showCreateDialog = true">➕ 创建第一个监控</el-button>
+                </div>
+
+                <div v-for="t in tasks" :key="t.id" class="task-card">
+                    <div class="info">
+                        <h3>
+                            {{ t.name }}
+                            <el-tag v-if="t.is_active" size="small" type="success" style="margin-left:8px">
+                                <span class="live-dot" style="width:6px;height:6px;margin-right:4px"></span>运行中
+                            </el-tag>
+                            <el-tag v-else size="small" type="info" style="margin-left:8px">已暂停</el-tag>
+                        </h3>
+                        <p>
+                            <el-tag v-if="t.is_all_server" size="small" type="warning" style="margin-right:6px">🌐 全服</el-tag>
+                            {{ t.server_name }} · Lv.{{ t.level_min }}-{{ t.level_max }}
+                            · 性价比>{{ (t.cost_effectiveness_min * 100).toFixed(0) }}%
+                            <span v-if="t.can_bargain === true"> · ✅可还价</span>
+                            <span v-if="t.is_first_listing"> · 🆕首次上架</span>
+                            <span v-if="t.cultivation_min"> · 修≥{{ t.cultivation_min }}</span>
+                            <span v-if="t.no_level_min"> · 无级别≥{{ t.no_level_min }}</span>
+                            <span v-if="t.never_wear_min"> · 永磨≥{{ t.never_wear_min }}</span>
+                            <span v-if="t.pet_types && t.pet_types.length"> · 宠物:{{ t.pet_types.join('/') }}</span>
+                            · 每{{ t.interval_seconds }}秒
+                            <span v-if="t.last_error" style="color:var(--red)"> · ❌ {{ t.last_error }}</span>
+                        </p>
+                        <p class="text-sm" style="margin-top:4px">
+                            已扫描 {{ t.scan_count }} 次 · 推送 {{ t.matched_count }} 个角色
+                            · 上次扫描: {{ t.last_scan_at ? formatTime(t.last_scan_at) : '从未' }}
+                        </p>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <el-switch v-model="t.is_active" @change="toggleTask(t)" />
+                        <el-button size="small" @click="scanOnce(t.id)" :loading="scanningId === t.id" :disabled="!t.is_active">🔍 立即扫描</el-button>
+                        <el-button size="small" @click="viewTaskRecords(t.id)">📊 记录</el-button>
+                        <el-button size="small" type="danger" @click="deleteTask(t.id)">🗑️</el-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 新建监控弹窗 -->
+            <el-dialog v-model="showCreateDialog" title="➕ 新建监控任务" width="720px" destroy-on-close top="3vh">
+                <el-form :model="newTask" label-width="100px" size="default">
+                    <el-form-item label="任务名称" required>
+                        <el-input v-model="newTask.name" placeholder="如：珍宝阁-175化圣-修80-无级别-性价比120%" />
+                    </el-form-item>
+                    <!-- 基础筛选 -->
+                    <el-row :gutter="16">
+                        <el-col :span="12">
+                            <el-form-item label="门派">
+                                <el-select v-model="newTask.school_ids" placeholder="全部门派" clearable multiple collapse-tags style="width:100%">
+                                    <el-option v-for="s in schoolOptions" :key="s.value" :label="s.label" :value="s.value" />
+                                </el-select>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-form-item label="最低等级">
+                                <el-input-number v-model="newTask.level_min" :min="1" :max="175" controls-position="right" style="width:100%" />
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-form-item label="最高等级">
+                                <el-input-number v-model="newTask.level_max" :min="1" :max="175" controls-position="right" style="width:100%" />
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+
+                    <!-- 性价比筛选 -->
+                    <el-form-item label="最低性价比">
+                        <div style="display:flex;align-items:center;gap:12px;width:100%">
+                            <el-slider v-model="cePercent" :min="0" :max="150" :step="5"
+                                :marks="{0:'0%',50:'50%',100:'100%',150:'150%'}"
+                                show-stops style="flex:1" />
+                            <el-input-number v-model="cePercent" :min="0" :max="150" :step="5"
+                                controls-position="right" style="width:110px" />
+                            <span style="color:#999;font-size:13px;white-space:nowrap">%</span>
+                        </div>
+                        <div style="color:#aaa;font-size:12px;margin-top:4px">
+                            估价 ÷ 售价 ≥ {{ cePercent }}%（100% = 估价等于售价，&gt;100% 表示低于估价在售）
+                        </div>
+                    </el-form-item>
+
+                    <!-- 高级设置 -->
+                    <el-divider content-position="left">⚙️ 高级设置</el-divider>
+                    <el-row :gutter="16">
+                        <el-col :span="12">
+                            <el-form-item label="扫描间隔">
+                                <el-select v-model="newTask.interval_seconds" style="width:100%">
+                                    <el-option :value="60" label="1分钟" />
+                                    <el-option :value="120" label="2分钟" />
+                                    <el-option :value="300" label="5分钟" />
+                                    <el-option :value="600" label="10分钟" />
+                                    <el-option :value="1800" label="30分钟" />
+                                </el-select>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="每次翻页数">
+                                <el-select v-model="newTask.max_pages" style="width:100%">
+                                    <el-option :value="1" label="1页(20个)" />
+                                    <el-option :value="3" label="3页(60个)" />
+                                    <el-option :value="5" label="5页(100个)" />
+                                    <el-option :value="10" label="10页(200个)" />
+                                </el-select>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-form-item label="自动启动">
+                        <el-switch v-model="newTask.auto_start" />
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="showCreateDialog = false">取消</el-button>
+                    <el-button type="primary" @click="createTask" :loading="creating">🎯 创建并启动</el-button>
+                </template>
+            </el-dialog>
+        </div>`,
+        data() {
+            return {
+                tab: 'push',
+                tasks: [],
+                records: [],
+                unreadCount: 0,
+                activeTasks: 0,
+                showCreateDialog: false,
+                creating: false,
+                scanningId: null,
+                servers: [],
+                newTask: {
+                    name: '', server_id: null, server_name: '',
+                    school_ids: [], level_min: 1, level_max: 175,
+                    price_min: null, price_max: null,
+                    zhuan_zhi: 'huasheng',
+                    can_bargain: null,
+                    is_first_listing: null,
+                    cost_effectiveness_min: 0.8,  // 降低默认值：估价 >= 售价的 80%
+                    price_drop_min: null,
+                    cultivation_min: null,
+                    pet_cultivation_min: null,
+                    no_level_min: null,
+                    no_level_equip_level_min: null,
+                    never_wear_min: null,
+                    never_wear_equip_level_min: null,
+                    equip_hole_min: null,
+                    lingshi_jinglian_min: null,
+                    pet_types: [],
+                    pet_skill_count_min: null,
+                    pet_lingxing_min: null,
+                    has_clothes: null,
+                    has_xiangrui: null,
+                    has_no_level: null,
+                    interval_seconds: 300,
+                    max_pages: 5,
+                    auto_start: true,
+                },
+                cePercent: 80,  // 默认 80%，范围 0-150%
+                schoolOptions: [
+                    {label:'大唐官府',value:'大唐官府'},{label:'方寸山',value:'方寸山'},{label:'化生寺',value:'化生寺'},
+                    {label:'女儿村',value:'女儿村'},{label:'龙宫',value:'龙宫'},{label:'五庄观',value:'五庄观'},
+                    {label:'普陀山',value:'普陀山'},{label:'狮驼岭',value:'狮驼岭'},{label:'魔王寨',value:'魔王寨'},
+                    {label:'阴曹地府',value:'阴曹地府'},{label:'盘丝洞',value:'盘丝洞'},{label:'神木林',value:'神木林'},
+                    {label:'凌波城',value:'凌波城'},{label:'无底洞',value:'无底洞'},{label:'女魃墓',value:'女魃墓'},
+                ],
+                petTypeOptions: [
+                    '吸血鬼','画魂','噬天虎','净瓶女娲','超级神羊','超级赤焰兽',
+                    '超级泡泡','超级神鸡','超级神马','超级灵鹿','超级金猴',
+                    '超级海豚','超级人参娃','超级白泽','超级青鸾','超级麒麟',
+                    '律法女娲','雾中仙','灵符女娲','幽萤娃娃','骨精灵','鬼将',
+                    '巡游天神','巨蛙','大海龟','山贼','野鬼','赌徒','强盗',
+                ],
+            };
+        },
+        watch: {
+            cePercent(v) { this.newTask.cost_effectiveness_min = v / 100; },
+            showCreateDialog(v) {
+                if (v) { this.loadServers(); }
+            },
+        },
+        async mounted() {
+            await Promise.all([this.loadTasks(), this.loadRecords()]);
+            this.connectSSE();
+        },
+        beforeUnmount() { this.disconnectSSE(); },
+        methods: {
+            formatPrice(v) { return v >= 10000 ? (v/10000).toFixed(1) + '万' : (v || 0).toFixed(0); },
+            formatTime(t) { if (!t) return '-'; const d = new Date(t); const now = new Date(); const diff = (now - d) / 1000; if (diff < 60) return '刚刚'; if (diff < 3600) return Math.floor(diff/60) + '分钟前'; if (diff < 86400) return Math.floor(diff/3600) + '小时前'; return d.toLocaleDateString(); },
+            zzLabel(zz) { const m = { normal:'普通', feisheng:'飞升', dujie:'渡劫', huasheng:'化圣' }; return m[zz] || zz; },
+            costClass(ce) { if (!ce) return 'cost-normal'; if (ce >= 1.5) return 'cost-great'; if (ce >= 1.2) return 'cost-good'; return 'cost-normal'; },
+            tagColor(tag) {
+                if (tag.includes('超值')) return 'danger';
+                if (tag.includes('性价比')) return 'success';
+                if (tag.includes('化圣')) return '';
+                if (tag.includes('修满') || tag.includes('修')) return 'warning';
+                if (tag.includes('无级别')) return 'danger';
+                if (tag.includes('永磨')) return '';
+                if (tag.includes('宝石')) return 'warning';
+                if (tag.includes('精炼')) return '';
+                if (tag.includes('宠修')) return 'warning';
+                if (tag.includes('锦衣') || tag.includes('祥瑞') || tag.includes('还价')) return 'success';
+                return 'info';
+            },
+            
+            async loadTasks() {
+                try {
+                    const r = await axios.get(API + '/api/monitor/tasks');
+                    this.tasks = r.data.tasks || [];
+                    this.activeTasks = this.tasks.filter(t => t.is_active).length;
+                } catch(e) {}
+            },
+            async loadRecords() {
+                try {
+                    const r = await axios.get(API + '/api/monitor/records', { params: { page_size: 50 } });
+                    this.records = r.data.records || [];
+                    this.unreadCount = this.records.filter(r => !r.is_read).length;
+                } catch(e) {}
+            },
+            async loadServers() {
+                try {
+                    const r = await axios.get(API + '/api/crawl/servers/all');
+                    this.servers = r.data.servers || [];
+                } catch(e) {}
+            },
+            
+            async createTask() {
+                // 全服或指定服务器均可
+                if (this.newTask.server_id) {
+                    const s = this.servers.find(s => String(s.serverid) === this.newTask.server_id);
+                    if (s) this.newTask.server_name = s.area_name + ' - ' + s.name;
+                } else {
+                    this.newTask.server_name = '全服';
+                }
+                const serverLabel = this.newTask.server_id ? (this.servers.find(s => String(s.serverid) === this.newTask.server_id)?.name || '') : '全服';
+                if (!this.newTask.name) this.newTask.name = `${serverLabel} ${this.newTask.level_min}-${this.newTask.level_max}级 性价比${this.cePercent}%`;
+                
+                this.creating = true;
+                try {
+                    const r = await axios.post(API + '/api/monitor/tasks', this.newTask);
+                    if (r.data.success) {
+                        this.$message.success('监控任务创建成功！');
+                        this.showCreateDialog = false;
+                        this.newTask = { name:'', server_id:null, server_name:'', school_ids:[], level_min:1, level_max:175, price_min:null, price_max:null, zhuan_zhi:'huasheng', can_bargain:null, is_first_listing:null, cost_effectiveness_min:0.8, price_drop_min:null, cultivation_min:null, pet_cultivation_min:null, no_level_min:null, no_level_equip_level_min:null, never_wear_min:null, never_wear_equip_level_min:null, equip_hole_min:null, lingshi_jinglian_min:null, pet_types:[], pet_skill_count_min:null, pet_lingxing_min:null, has_clothes:null, has_xiangrui:null, has_no_level:null, interval_seconds:300, max_pages:5, auto_start:true };
+                        this.cePercent = 80;  // 默认 80%
+                        await this.loadTasks();
+                        this.tab = 'tasks';
+                    } else {
+                        this.$message.error(r.data.error || '创建失败');
+                    }
+                } catch(e) { this.$message.error(e.response?.data?.detail || '创建失败'); }
+                this.creating = false;
+            },
+            
+            async toggleTask(t) {
+                try {
+                    if (t.is_active) {
+                        await axios.post(API + '/api/monitor/tasks/' + t.id + '/start');
+                        this.$message.success('监控已启动');
+                    } else {
+                        await axios.post(API + '/api/monitor/tasks/' + t.id + '/stop');
+                        this.$message.info('监控已停止');
+                    }
+                    this.activeTasks = this.tasks.filter(t => t.is_active).length;
+                } catch(e) { this.$message.error('操作失败'); }
+            },
+            
+            async deleteTask(id) {
+                try {
+                    await this.$confirm('确定删除此监控任务？推送记录也会被清除。', '确认', { type: 'warning' });
+                    await axios.delete(API + '/api/monitor/tasks/' + id);
+                    this.$message.success('已删除');
+                    await this.loadTasks();
+                } catch(e) { if (e !== 'cancel') this.$message.error('删除失败'); }
+            },
+            
+            async scanOnce(id) {
+                this.scanningId = id;
+                try {
+                    const r = await axios.post(API + '/api/monitor/tasks/' + id + '/scan-once');
+                    if (r.data.success) {
+                        this.$message.success(r.data.new_matches > 0 ? `发现 ${r.data.new_matches} 个新角色！` : '未发现新角色');
+                        await this.loadRecords();
+                        await this.loadTasks();
+                    } else {
+                        this.$message.error(r.data.error || '扫描失败');
+                    }
+                } catch(e) { this.$message.error('扫描失败'); }
+                this.scanningId = null;
+            },
+            
+            async viewTaskRecords(taskId) {
+                try {
+                    const r = await axios.get(API + '/api/monitor/records', { params: { task_id: taskId, page_size: 50 } });
+                    this.records = r.data.records || [];
+                    this.tab = 'push';
+                } catch(e) {}
+            },
+            
+            async markRead(id) {
+                try { await axios.post(API + '/api/monitor/records/' + id + '/read'); } catch(e) {}
+                this.records = this.records.map(r => r.id === id ? {...r, is_read: true} : r);
+                this.unreadCount = Math.max(0, this.unreadCount - 1);
+            },
+            
+            async markAllRead() {
+                try {
+                    await axios.post(API + '/api/monitor/records/read-all');
+                    this.records.forEach(r => r.is_read = true);
+                    this.unreadCount = 0;
+                    this.$message.success('全部已读');
+                } catch(e) {}
+            },
+            
+            goCbgUrl(url) { if (url) window.open(url, '_blank'); },
+            goEstimate(r) {
+                // 优先从本地数据库获取已有数据，避免 API 过期问题
+                this.$router.push('/crawl?url=' + encodeURIComponent(r.cbg_url) + '&record_id=' + r.id);
+            },
+            
+            // SSE 连接
+            _eventSource: null,
+            connectSSE() {
+                try {
+                    const es = new EventSource(API + '/api/monitor/sse');
+                    this._eventSource = es;
+                    es.onmessage = (e) => {
+                        try {
+                            const data = JSON.parse(e.data);
+                            if (data.type === 'new_match') {
+                                const record = {
+                                    id: data.record_id,
+                                    role_name: data.role_name,
+                                    school: data.school,
+                                    level: data.level,
+                                    zhuan_zhi: data.zhuan_zhi || '',
+                                    selling_price: data.selling_price,
+                                    estimated_price: data.estimated_price,
+                                    cost_effectiveness: data.cost_effectiveness,
+                                    price_drop_amount: data.price_drop_amount,
+                                    can_bargain: data.can_bargain,
+                                    highlight_tags: data.highlight_tags || [],
+                                    role_summary: data.role_summary || '',
+                                    total_cultivation: data.total_cultivation,
+                                    pet_total_cultivation: data.pet_total_cultivation || null,
+                                    no_level_count: data.no_level_count,
+                                    never_wear_count: data.never_wear_count,
+                                    clothes_names: data.clothes_names || [],
+                                    xiangrui_names: data.xiangrui_names || [],
+                                    pet_type_labels: data.pet_type_labels || [],
+                                    is_read: false,
+                                    first_seen_at: new Date().toISOString(),
+                                    cbg_url: data.cbg_url,
+                                };
+                                this.records.unshift(record);
+                                this.unreadCount++;
+                                // 桌面通知
+                                if (Notification.permission === 'granted') {
+                                    new Notification('🎯 发现性价比角色！', {
+                                        body: `${record.role_summary || record.role_name + ' ' + record.school} 售价¥${record.selling_price} 估价¥${record.estimated_price}`,
+                                    });
+                                }
+                                this.$notify({
+                                    title: '🎯 新角色推送',
+                                    message: `${record.role_name} ${record.school} Lv.${record.level} 售价¥${record.selling_price} 性价比${(data.cost_effectiveness * 100).toFixed(0)}%${data.role_summary ? ' — ' + data.role_summary : ''}`,
+                                    type: 'success',
+                                    duration: 8000,
+                                });
+                                this.loadTasks();
+                            }
+                        } catch(err) {}
+                    };
+                    es.onerror = () => { setTimeout(() => this.connectSSE(), 5000); };
+                } catch(e) {}
+            },
+            disconnectSSE() { if (this._eventSource) { this._eventSource.close(); this._eventSource = null; } },
+        },
+        created() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        },
+    };
+
+    // ============ 采集估价页面 ============
+    const CrawlPage = {
+        template: `
+        <div>
+            <h1 class="page-title">🔍 采集估价</h1>
+            <el-card class="mb-20">
+                <div class="url-input-box">
+                    <el-input v-model="url" placeholder="粘贴藏宝阁角色链接（PC端/手机端均可）" size="large" clearable
+                        @keyup.enter="fetch" @input="onUrlInput" @paste="onUrlPaste" />
+                    <el-button type="primary" size="large" @click="fetch" :loading="loading">🔍 开始估价</el-button>
+                </div>
+
+                <!-- URL 类型智能提示 -->
+                <transition name="el-fade-in">
+                <div v-if="urlHint" style="margin-top:10px">
+                    <!-- 所有支持的链接类型均可直接估价 -->
+                    <el-alert v-if="urlHint.url_type && urlHint.url_type !== 'unknown'"
+                        type="success" :closable="false"
+                        :title="'✅ 检测到 ' + (urlHint.url_type === 'mobile' ? '移动端' : urlHint.url_type === 'pc_eid' ? 'PC端 eid' : 'PC端') + ' 链接，' + (urlHint.need_login ? '将尝试解析...' : '无需登录，可直接估价')" />
+                    <!-- 无法识别 -->
+                    <el-alert v-else-if="urlHint.url_type === 'unknown'"
+                        type="error" :closable="false"
+                        title="❌ 无法识别的链接格式，请确认是藏宝阁角色页面链接" />
+                </div>
+                </transition>
+
+                <el-alert v-if="parseResult" type="info" :closable="false" style="margin-top:10px">
+                    <template #title>
+                        🔗 已解析: <span class="gold">{{ parseResult.area_name }} · {{ parseResult.server_name }}</span>
+                        &nbsp;订单号: <span style="font-family:monospace">{{ parseResult.ordersn }}</span>
+                    </template>
+                </el-alert>
+
+                <!-- 错误提示（支持多行） -->
+                <div v-if="error" class="error-block" style="margin-top:10px">
+                    <div class="error-block-icon">❌</div>
+                    <div class="error-block-body">
+                        <div v-for="(line, i) in errorLines" :key="i"
+                            :style="getErrorLineStyle(line)">
+                            {{ line }}
+                        </div>
+                    </div>
+                </div>
+            </el-card>
+
+            <el-card v-if="loading"><el-skeleton :rows="10" animated /></el-card>
+
+            <template v-if="roleData && !loading">
+                <!-- 角色概览 + 价格总览 -->
+                <!-- 估价报告 - 仿参考图风格 -->
+                <div v-if="evaluation" class="eval-card">
+                    <!-- 角色基本信息 -->
+                    <div class="eval-role-name">{{ roleData.role_name || '未知角色' }}</div>
+                    <div class="eval-role-meta">
+                        {{ roleData.server_name || '未知服务器' }}
+                        <span style="margin: 0 8px">·</span>
+                        Lv.{{ roleData.level || 0 }}
+                        <span style="margin: 0 8px">·</span>
+                        {{ roleData.school || '未知门派' }}
+                        <span v-if="roleData.zhuan_zhi && roleData.zhuan_zhi !== 'normal'" style="margin: 0 8px">·</span>
+                        <span v-if="roleData.zhuan_zhi && roleData.zhuan_zhi !== 'normal'" style="color:#e6a23c">{{ zzLabel }}</span>
+                    </div>
+
+                    <!-- 价格列表 -->
+                    <div class="eval-price-list">
+                        <div class="eval-price-row">
+                            <span class="label">当前售价</span>
+                            <span class="value sell">¥{{ formatPrice(roleData.selling_price) }}</span>
+                        </div>
+                        <div class="eval-price-row">
+                            <span class="label">总估价</span>
+                            <span class="value total">¥{{ formatPrice(evaluation.estimated_price) }}</span>
+                        </div>
+                        <div class="eval-price-row">
+                            <span class="label">角色估价</span>
+                            <span class="value role">¥{{ formatPrice(evaluation.breakdown?.role_attr?.total || 0) }}</span>
+                        </div>
+                        <div class="eval-price-row">
+                            <span class="label">物品估价</span>
+                            <span class="value items">¥{{ formatPrice(evaluation.breakdown ? ((evaluation.breakdown.cultivation?.total||0) + (evaluation.breakdown.skills?.total||0) + (evaluation.breakdown.appearance?.total||0) + (evaluation.breakdown.equipment?.total||0) + (evaluation.breakdown.pets?.total||0) + (evaluation.breakdown.fabao?.total||0)) : 0) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div style="margin-top:16px;display:flex;gap:8px">
+                        <el-button v-if="roleData" size="small" type="success" :loading="saving" @click="saveRole">📥 保存</el-button>
+                        <a :href="url" target="_blank" style="font-size:12px;color:#999;text-decoration:none;line-height:32px">🔗 原页</a>
+                        <span :class="['ratio-tip', ratio >= 1.2 ? 'ratio-great' : ratio >= 1.0 ? 'ratio-good' : ratio >= 0.8 ? 'ratio-fair' : 'ratio-over']" style="margin-left:auto">
+                            性价比 {{ (ratio * 100).toFixed(0) }}% · {{ ratioBadgeText }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 折叠面板 -->
+                <div v-if="evaluation" class="eval-collapse" v-model="activePanels">
+                    <!-- 市场参考 -->
+                    <el-collapse-item v-if="allBreakdownItems.filter(i=>i.category==='role_attr').length" name="market">
+                        <template #title>
+                            <span>市场参考</span>
+                            <span class="collapse-price">¥{{ formatPrice(evaluation.breakdown?.role_attr?.total || 0) }}</span>
+                        </template>
+                        <table class="detail-table">
+                            <thead><tr><th>项目</th><th>详情</th><th style="text-align:right">估价</th></tr></thead>
+                            <tbody>
+                                <tr v-for="item in allBreakdownItems.filter(i=>i.category==='role_attr')" :key="item.key">
+                                    <td class="td-name">{{ item.label }}</td>
+                                    <td class="td-sub">{{ item.sub }}</td>
+                                    <td class="td-val">¥{{ formatPrice(item.value) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </el-collapse-item>
+
+                    <!-- 修炼系统 -->
+                    <el-collapse-item v-if="cultivationDetails" name="cultivation">
+                        <template #title>
+                            <span>修炼系统</span>
+                            <span class="collapse-price">¥{{ formatPrice(cultivationDetails.personTotal + cultivationDetails.petTotal) }}</span>
+                        </template>
+                        <!-- 人物修炼 -->
+                        <div class="cult-table-section">
+                            <div class="cult-table-title">人物修炼</div>
+                            <table class="detail-table">
+                                <thead><tr><th>项目</th><th>等级</th><th style="text-align:right">估价</th></tr></thead>
+                                <tbody>
+                                    <tr><td class="td-name">攻击修炼</td><td class="td-level">{{ cultivationDetails.personAttack }}</td><td class="td-val">¥{{ formatPrice(cultivationDetails.personAttackVal) }}</td></tr>
+                                    <tr><td class="td-name">防御修炼</td><td class="td-level">{{ cultivationDetails.personDefense }}</td><td class="td-val">¥{{ formatPrice(cultivationDetails.personDefenseVal) }}</td></tr>
+                                    <tr><td class="td-name">法术修炼</td><td class="td-level">{{ cultivationDetails.personMagic }}</td><td class="td-val">¥{{ formatPrice(cultivationDetails.personMagicVal) }}</td></tr>
+                                    <tr><td class="td-name">抗法修炼</td><td class="td-level">{{ cultivationDetails.personResist }}</td><td class="td-val">¥{{ formatPrice(cultivationDetails.personResistVal) }}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- 宠物修炼 -->
+                        <div class="cult-table-section">
+                            <div class="cult-table-title pet">宠物修炼</div>
+                            <table class="detail-table">
+                                <thead><tr><th>项目</th><th>等级</th><th style="text-align:right">估价</th></tr></thead>
+                                <tbody>
+                                    <tr><td class="td-name">攻击修炼</td><td class="td-level" style="color:#52c41a">{{ cultivationDetails.petAttack }}</td><td class="td-val">¥{{ formatPrice(cultivationDetails.petAttackVal) }}</td></tr>
+                                    <tr><td class="td-name">防御修炼</td><td class="td-level" style="color:#52c41a">{{ cultivationDetails.petDefense }}</td><td class="td-val">¥{{ formatPrice(cultivationDetails.petDefenseVal) }}</td></tr>
+                                    <tr><td class="td-name">法术修炼</td><td class="td-level" style="color:#52c41a">{{ cultivationDetails.petMagic }}</td><td class="td-val">¥{{ formatPrice(cultivationDetails.petMagicVal) }}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </el-collapse-item>
+
+                    <!-- 技能系统 -->
+                    <el-collapse-item v-if="allBreakdownItems.filter(i=>i.category==='skills').length" name="skills">
+                        <template #title>
+                            <span>技能系统</span>
+                            <span class="collapse-price">¥{{ formatPrice(evaluation.breakdown?.skills?.total || 0) }}</span>
+                        </template>
+                        <table class="detail-table">
+                            <thead><tr><th>技能</th><th>等级</th><th style="text-align:right">估价</th></tr></thead>
+                            <tbody>
+                                <tr v-for="item in allBreakdownItems.filter(i=>i.category==='skills')" :key="item.key">
+                                    <td class="td-name">{{ item.label }}</td>
+                                    <td class="td-level">{{ item.sub }}</td>
+                                    <td class="td-val">¥{{ formatPrice(item.value) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </el-collapse-item>
+
+                    <!-- 法宝 -->
+                    <el-collapse-item v-if="allBreakdownItems.filter(i=>i.category==='fabao').length" name="fabao">
+                        <template #title>
+                            <span>法宝</span>
+                            <span class="collapse-price">¥{{ formatPrice(evaluation.breakdown?.fabao?.total || 0) }}</span>
+                        </template>
+                        <table class="detail-table">
+                            <thead><tr><th>法宝</th><th>等级</th><th style="text-align:right">估价</th></tr></thead>
+                            <tbody>
+                                <tr v-for="item in allBreakdownItems.filter(i=>i.category==='fabao')" :key="item.key">
+                                    <td class="td-name">{{ item.label }}</td>
+                                    <td class="td-level">{{ item.sub }}</td>
+                                    <td class="td-val">¥{{ formatPrice(item.value) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </el-collapse-item>
+
+                    <!-- 外观系统 -->
+                    <el-collapse-item v-if="allBreakdownItems.filter(i=>i.category==='appearance').length" name="appearance">
+                        <template #title>
+                            <span>外观系统</span>
+                            <span class="collapse-price">¥{{ formatPrice(evaluation.breakdown?.appearance?.total || 0) }}</span>
+                        </template>
+                        <table class="detail-table">
+                            <thead><tr><th>外观</th><th>类型</th><th style="text-align:right">估价</th></tr></thead>
+                            <tbody>
+                                <tr v-for="item in allBreakdownItems.filter(i=>i.category==='appearance')" :key="item.key">
+                                    <td class="td-name">{{ item.label }}</td>
+                                    <td class="td-sub">{{ item.sub }}</td>
+                                    <td class="td-val">¥{{ formatPrice(item.value) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </el-collapse-item>
+
+                    <!-- 装备系统 -->
+                    <el-collapse-item v-if="allBreakdownItems.filter(i=>i.category==='equipment').length" name="equipment">
+                        <template #title>
+                            <span>装备系统</span>
+                            <span class="collapse-price">¥{{ formatPrice(evaluation.breakdown?.equipment?.total || 0) }}</span>
+                        </template>
+                        <table class="detail-table">
+                            <thead><tr><th>装备</th><th>特效</th><th style="text-align:right">估价</th></tr></thead>
+                            <tbody>
+                                <tr v-for="item in allBreakdownItems.filter(i=>i.category==='equipment')" :key="item.key">
+                                    <td class="td-name">{{ item.label }}</td>
+                                    <td class="td-sub">{{ item.sub }}</td>
+                                    <td class="td-val">¥{{ formatPrice(item.value) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </el-collapse-item>
+
+                    <!-- 召唤兽 -->
+                    <el-collapse-item v-if="allBreakdownItems.filter(i=>i.category==='pets').length" name="pets">
+                        <template #title>
+                            <span>召唤兽</span>
+                            <span class="collapse-price">¥{{ formatPrice(evaluation.breakdown?.pets?.total || 0) }}</span>
+                        </template>
+                        <table class="detail-table">
+                            <thead><tr><th>召唤兽</th><th>等级 / 技能</th><th style="text-align:right">估价</th></tr></thead>
+                            <tbody>
+                                <tr v-for="item in allBreakdownItems.filter(i=>i.category==='pets')" :key="item.key">
+                                    <td class="td-name">{{ item.label }}</td>
+                                    <td class="td-sub">{{ item.sub }}</td>
+                                    <td class="td-val">¥{{ formatPrice(item.value) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </el-collapse-item>
+                </div>
+
+                <!-- 饼图 -->
+                <div v-if="evaluation && hasChartData" class="eval-chart-section">
+                    <div class="eval-chart-title">价值分布</div>
+                    <div class="eval-chart-wrap">
+                        <div ref="chartEl" style="flex:0 0 200px;height:200px"></div>
+                        <div class="eval-chart-legend">
+                            <div v-for="item in chartItems" :key="item.name" class="legend-item">
+                                <span class="legend-dot" :style="{background:item.color}"></span>
+                                <span class="legend-name">{{ item.name }}</span>
+                                <span class="legend-value">¥{{ formatPrice(item.value) }}</span>
+                                <span class="legend-pct">{{ item.pct }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 估价注释 -->
+                <div v-if="evaluation && evaluation.notes && evaluation.notes.length" class="eval-card" style="margin-top:16px">
+                    <div v-for="(n,i) in evaluation.notes" :key="i" style="font-size:13px;color:#666;margin-bottom:4px">• {{ n }}</div>
+                </div>
+
+                <!-- 没有估价结果时的提示 -->
+                <el-alert v-if="!evaluation && roleData" type="warning" title="估价引擎未返回结果，请检查角色数据完整性" :closable="false" class="mb-20" />
+            </template>
+        </div>`,
+        data() {
+            return {
+                url: '', loading: false, saving: false, error: '',
+                parseResult: null, roleData: null, evaluation: null,
+                chart: null,
+                urlHint: null,      // URL 类型检测结果
+                _urlCheckTimer: null, // 防抖计时器
+                activePanels: 'cultivation', // 默认展开修炼面板
+                // 门派ID映射
+                schoolMap: {
+                    1:'大唐官府', 2:'化生寺', 3:'方寸山', 4:'魔王寨', 5:'狮驼岭', 6:'龙宫',
+                    7:'五庄观', 8:'普陀山', 9:'女儿村', 10:'天宫', 11:'凌波城', 12:'神木林',
+                    13:'东海渊', 14:'凌波城', 15:'无底洞', 16:'女魃墓', 17:'天机城', 18:'阴曹地府',
+                    19:'魔王寨', 22:'盘丝洞', 23:'天宫', 24:'花果山', 55:'天宫',
+                },
+                // 转职映射
+                zzMap: {
+                    1: 'feisheng',   // 飞升
+                    2: 'dujie',      // 渡劫
+                    3: 'huasheng',   // 化圣
+                    4: 'normal',     // 普通
+                },
+            };
+        },
+        computed: {
+            errorLines() {
+                if (!this.error) return [];
+                return this.error.split('\n').filter(l => l !== undefined);
+            },
+            zzLabel() {
+                const m = { normal:'普通', feisheng:'飞升', dujie:'渡劫', huasheng:'化圣' };
+                return m[this.roleData?.zhuan_zhi] || '普通';
+            },
+            ratio() {
+                if (!this.roleData?.selling_price || !this.evaluation?.estimated_price) return 0;
+                return this.evaluation.estimated_price / this.roleData.selling_price;
+            },
+            confClass() {
+                const c = this.evaluation?.confidence || '';
+                if (c.includes('高')) return 'eval-conf-high';
+                if (c.includes('中')) return 'eval-conf-medium';
+                return 'eval-conf-low';
+            },
+            ratioBadgeClass() {
+                const r = this.ratio;
+                if (r >= 1.2) return 'ratio-great';
+                if (r >= 1.0) return 'ratio-good';
+                if (r >= 0.8) return 'ratio-fair';
+                return 'ratio-overpriced';
+            },
+            ratioBadgeText() {
+                const r = this.ratio;
+                if (r >= 1.2) return '🔥 超高性价比 — 强烈推荐入手';
+                if (r >= 1.0) return '✅ 性价比良好 — 值得考虑';
+                if (r >= 0.8) return '💛 略微偏贵 — 可尝试砍价';
+                return '❌ 明显高估 — 建议观望';
+            },
+            // 修炼详情（按样本数据分类）
+            cultivationDetails() {
+                if (!this.evaluation?.breakdown?.cultivation) return null;
+                const bd = this.evaluation.breakdown;
+                const person = bd.cultivation.person || {};
+                const pet = bd.cultivation.pet || {};
+                const personDet = person.details || {};
+                const petDet = pet.details || {};
+                
+                // 从 roleData 或 other_info 获取修炼等级
+                const roleData = this.roleData || {};
+                const otherInfo = roleData.other_info || {};
+                
+                // 人物修炼等级
+                const personAttack = otherInfo.iExptSki1 || 0;
+                const personDefense = otherInfo.iExptSki2 || 0;
+                const personMagic = otherInfo.iExptSki3 || 0;
+                const personResist = otherInfo.iExptSki4 || 0;
+                
+                // 宠物修炼等级
+                const petAttack = otherInfo.iBeastSki1 || 0;
+                const petDefense = otherInfo.iBeastSki2 || 0;
+                const petMagic = otherInfo.iBeastSki3 || 0;
+                
+                return {
+                    personAttack,
+                    personDefense,
+                    personMagic,
+                    personResist,
+                    personAttackVal: personDet.attack || 0,
+                    personDefenseVal: personDet.defense || 0,
+                    personMagicVal: personDet.magic || 0,
+                    personResistVal: personDet.resist || 0,
+                    personTotal: person.total || 0,
+                    petAttack,
+                    petDefense,
+                    petMagic,
+                    petAttackVal: petDet.attack || 0,
+                    petDefenseVal: petDet.defense || 0,
+                    petMagicVal: petDet.magic || 0,
+                    petTotal: pet.total || 0,
+                };
+            },
+            // 所有分类明细（展开显示各小项）
+            allBreakdownItems() {
+                if (!this.evaluation?.breakdown) return [];
+                const bd = this.evaluation.breakdown;
+                const roleData = this.roleData || {};
+                const otherInfo = roleData.other_info || {};
+                const items = [];
+                
+                // ========== 角色属性子项 ==========
+                const roleAttrDetails = bd.role_attr?.details || {};
+                const roleAttrIcons = {
+                    '转职': '🔱', '机缘': '🌟', '乾元丹': '💫', '储备金': '💰',
+                    '历史门派': '🏛️', '保留属性': '💎', '召唤兽扩展栏': '🐾',
+                    '仙玉': '✨', '灵宝': '⚡'
+                };
+                const roleAttrSubs = {
+                    '转职': this.zzLabel,
+                    '机缘': `${roleData.jiyuan || otherInfo.iGoodness || 0} 点`,
+                    '乾元丹': `${roleData.qianyuan_dan || otherInfo.iQianYuanDan || 0} 个`,
+                    '储备金': `${roleData.reserve_money || otherInfo.iReserveMoney || 0} 万`,
+                    '历史门派': `${(roleData.history_schools || otherInfo.historySchool || []).length} 个`,
+                    '保留属性': (roleData.has_reserved_attr || otherInfo.iReserveAttr) ? '有' : '无',
+                    '召唤兽扩展栏': roleData.pet_extra_slots > 0 ? `+${roleData.pet_extra_slots} 格` : '无',
+                    '仙玉': `${roleData.fairy_jade || otherInfo.iSchOffer || 0}`,
+                    '灵宝': (roleData.lingbao || otherInfo.iLingBao) ? '有' : '无',
+                };
+                for (const [key, val] of Object.entries(roleAttrDetails)) {
+                    if (val > 0) {
+                        items.push({ 
+                            category: 'role_attr',
+                            key: 'attr_' + key,
+                            icon: roleAttrIcons[key] || '💎',
+                            label: key,
+                            sub: roleAttrSubs[key] || '',
+                            value: val
+                        });
+                    }
+                }
+                
+                // ========== 法宝子项 ==========
+                const fabaoItems = bd.fabao?.items || [];
+                const fabaoList = roleData.fandom_list || roleData.fabao_list || [];
+                for (const item of fabaoItems) {
+                    if (item.value > 0) {
+                        const src = fabaoList.find(f => f.name === item.name) || {};
+                        items.push({ 
+                            category: 'fabao',
+                            key: 'fabao_' + item.name,
+                            icon: '🔮',
+                            label: item.name,
+                            sub: `Lv.${src.level || item.level || 0}`,
+                            value: item.value
+                        });
+                    }
+                }
+                
+                // ========== 人物修炼子项 ==========
+                const personCultDetails = bd.cultivation?.person?.details || {};
+                const personCultIcons = {
+                    'attack': '⚔️', 'defense': '🛡️', 'magic': '✨', 'resist': '🌈', 'lieshu': '🏹'
+                };
+                const personCultLabels = {
+                    'attack': '攻击修炼', 'defense': '防御修炼', 'magic': '法术修炼',
+                    'resist': '抗法修炼', 'lieshu': '猎术修炼'
+                };
+                const personCultLevelMap = {
+                    'attack': roleData.attack_cultivation || otherInfo.iExptSki1 || 0,
+                    'defense': roleData.defense_cultivation || otherInfo.iExptSki2 || 0,
+                    'magic': roleData.magic_cultivation || otherInfo.iExptSki3 || 0,
+                    'resist': roleData.resist_magic_cultivation || otherInfo.iExptSki4 || 0,
+                    'lieshu': roleData.lieshu_cultivation || otherInfo.iExptSki5 || 0,
+                };
+                const personCultMaxMap = {
+                    'attack': roleData.max_attack_cultivation || 0,
+                    'defense': roleData.max_defense_cultivation || 0,
+                    'magic': roleData.max_magic_cultivation || 0,
+                    'resist': roleData.max_resist_cultivation || 0,
+                    'lieshu': roleData.max_lieshu_cultivation || 0,
+                };
+                for (const [key, val] of Object.entries(personCultDetails)) {
+                    if (val > 0) {
+                        const lvl = personCultLevelMap[key] || 0;
+                        const max = personCultMaxMap[key] || '?';
+                        items.push({ 
+                            category: 'cultivation',
+                            key: 'person_' + key,
+                            icon: personCultIcons[key] || '⚔️',
+                            label: personCultLabels[key] || key,
+                            sub: `${lvl}/${max}`,
+                            value: val
+                        });
+                    }
+                }
+                
+                // ========== 宠物修炼子项 ==========
+                const petCultDetails = bd.cultivation?.pet?.details || {};
+                const petCultIcons = { 'attack': '⚔️', 'defense': '🛡️', 'magic': '✨', 'resist': '🌈' };
+                const petCultLabels = { 'attack': '宠攻修炼', 'defense': '宠防修炼', 'magic': '宠法修炼', 'resist': '宠抗修炼' };
+                const petCultLevelMap = {
+                    'attack': roleData.pet_attack_control || otherInfo.iBeastSki1 || 0,
+                    'defense': roleData.pet_defense_control || otherInfo.iBeastSki2 || 0,
+                    'magic': roleData.pet_magic_control || otherInfo.iBeastSki3 || 0,
+                    'resist': roleData.pet_resistance_control || otherInfo.iBeastSki4 || 0,
+                };
+                for (const [key, val] of Object.entries(petCultDetails)) {
+                    if (val > 0) {
+                        const lvl = petCultLevelMap[key] || 0;
+                        items.push({ 
+                            category: 'cultivation',
+                            key: 'pet_' + key,
+                            icon: petCultIcons[key] || '🐾',
+                            label: petCultLabels[key] || key,
+                            sub: `${lvl}/25`,
+                            value: val
+                        });
+                    }
+                }
+                
+                // ========== 师门技能子项 ==========
+                const masterItems = bd.skills?.master?.items || [];
+                const masterSkillList = roleData.master_skills || [];
+                for (const item of masterItems) {
+                    if (item.value > 0) {
+                        const src = masterSkillList.find(s => s.name === item.name) || {};
+                        items.push({ 
+                            category: 'skills',
+                            key: 'master_' + item.name,
+                            icon: '📖',
+                            label: item.name,
+                            sub: `${item.level || src.level || 0} 级`,
+                            value: item.value
+                        });
+                    }
+                }
+                
+                // ========== 生活技能子项 ==========
+                const lifeItems = bd.skills?.life?.items || [];
+                const lifeSkillList = roleData.life_skills || [];
+                for (const item of lifeItems) {
+                    if (item.value > 0) {
+                        const src = lifeSkillList.find(s => s.name === item.name) || {};
+                        items.push({ 
+                            category: 'skills',
+                            key: 'life_' + item.name,
+                            icon: '🌿',
+                            label: item.name,
+                            sub: `${item.level || src.level || 0} 级`,
+                            value: item.value
+                        });
+                    }
+                }
+                
+                // ========== 外观子项 ==========
+                if (bd.appearance?.mount > 0) {
+                    const mountCount = (roleData.mounts || []).length;
+                    items.push({ category: 'appearance', key: 'mount', icon: '🏇', label: '坐骑', sub: `${mountCount} 匹`, value: bd.appearance.mount });
+                }
+                const clothesItems = bd.appearance?.clothes?.items || [];
+                const clothesList = roleData.clothes_list || [];
+                for (const item of clothesItems) {
+                    if (item.value > 0) {
+                        const src = clothesList.find(c => c.name === item.name) || {};
+                        const rarity = src.rarity || 1;
+                        items.push({ 
+                            category: 'appearance',
+                            key: 'clothes_' + item.name, 
+                            icon: '👔', 
+                            label: item.name,
+                            sub: rarity > 1 ? '限定' : '普通',
+                            value: item.value
+                        });
+                    }
+                }
+                const xiangruiItems = bd.appearance?.xiangrui?.items || [];
+                const xiangruiList = roleData.xiangrui_list || [];
+                for (const item of xiangruiItems) {
+                    if (item.value > 0) {
+                        const src = xiangruiList.find(x => x.name === item.name) || {};
+                        const rarity = src.rarity || 1;
+                        items.push({ 
+                            category: 'appearance',
+                            key: 'xiangrui_' + item.name, 
+                            icon: '🦚', 
+                            label: item.name,
+                            sub: rarity > 1 ? '限量' : '普通',
+                            value: item.value
+                        });
+                    }
+                }
+                const spellItems = bd.appearance?.spell_effects?.items || [];
+                for (const item of spellItems) {
+                    if (item.value > 0) {
+                        items.push({ 
+                            category: 'appearance',
+                            key: 'spell_' + item.name,
+                            icon: '✨', 
+                            label: item.name,
+                            sub: '',
+                            value: item.value
+                        });
+                    }
+                }
+                
+                // ========== 装备子项 ==========
+                const equipItems = bd.equipment?.items || [];
+                const equipList = roleData.equip_list || [];
+                for (const item of equipItems) {
+                    if (item.value > 0) {
+                        const src = equipList.find(e => e.name === item.name) || {};
+                        const refine = src.refine_level || 0;
+                        items.push({ 
+                            category: 'equipment',
+                            key: 'equip_' + item.name, 
+                            icon: '🛡️', 
+                            label: item.name,
+                            sub: refine > 0 ? `+${refine}` : '',
+                            value: item.value
+                        });
+                    }
+                }
+                
+                // ========== 召唤兽子项 ==========
+                const petItems = bd.pets?.items || [];
+                const petList = roleData.pet_list || [];
+                for (const item of petItems) {
+                    if (item.value > 0) {
+                        const src = petList.find(p => p.name === item.name) || {};
+                        items.push({ 
+                            category: 'pets',
+                            key: 'pet_' + item.name, 
+                            icon: '🐉', 
+                            label: item.name,
+                            sub: `${src.level || 0} 级 | ${src.skill_count || 0} 技能`,
+                            value: item.value
+                        });
+                    }
+                }
+                
+                return items;
+            },
+            // 大分类汇总（供饼图使用）
+            breakdownItems() {
+                if (!this.evaluation?.breakdown) return [];
+                const bd = this.evaluation.breakdown;
+                const items = [];
+                
+                // 角色属性
+                if (bd.role_attr?.total > 0) {
+                    items.push({ key: 'role_attr', icon: '💎', label: '角色属性', value: bd.role_attr.total });
+                }
+                // 法宝
+                if (bd.fabao?.total > 0) {
+                    items.push({ key: 'fabao', icon: '🔮', label: '法宝', value: bd.fabao.total });
+                }
+                // 修炼系统
+                if (bd.cultivation?.total > 0) {
+                    items.push({ key: 'cultivation', icon: '⚔️', label: '修炼系统', value: bd.cultivation.total });
+                }
+                // 技能系统
+                if (bd.skills?.total > 0) {
+                    items.push({ key: 'skills', icon: '📖', label: '技能系统', value: bd.skills.total });
+                }
+                // 外观系统
+                if (bd.appearance?.total > 0) {
+                    items.push({ key: 'appearance', icon: '🦚', label: '外观系统', value: bd.appearance.total });
+                }
+                // 装备系统
+                if (bd.equipment?.total > 0) {
+                    items.push({ key: 'equipment', icon: '🛡️', label: '装备系统', value: bd.equipment.total });
+                }
+                // 召唤兽
+                if (bd.pets?.total > 0) {
+                    items.push({ key: 'pets', icon: '🐉', label: '召唤兽', value: bd.pets.total });
+                }
+                
+                return items;
+            },
+            breakdownItems() {
+                // 返回所有分类项（供饼图使用）- 角色属性展开为子项
+                const items = [];
+                if (!this.evaluation?.breakdown) return items;
+                const bd = this.evaluation.breakdown;
+                
+                // 人物修炼（合并为一项）
+                if (bd.cultivation?.person?.total) {
+                    items.push({ key: 'person', icon: '⚔️', label: '人物修炼', value: bd.cultivation.person.total });
+                }
+                
+                // 宠物修炼（合并为一项）
+                if (bd.cultivation?.pet?.total) {
+                    items.push({ key: 'pet', icon: '🐾', label: '宠修炼', value: bd.cultivation.pet.total });
+                }
+                
+                // 角色属性子项（展开显示）
+                const roleAttrDetails = bd.role_attr?.details || {};
+                const roleAttrIcons = {
+                    '转职': '🔱', '机缘': '🌟', '乾元丹': '💫', '储备金': '💰',
+                    '历史门派': '🏛️', '保留属性': '💎', '召唤兽扩展栏': '🐾',
+                    '仙玉': '✨', '灵宝': '⚡'
+                };
+                for (const [key, val] of Object.entries(roleAttrDetails)) {
+                    if (val > 0) {
+                        items.push({ 
+                            key: 'attr_' + key, 
+                            icon: roleAttrIcons[key] || '💎', 
+                            label: key, 
+                            value: val 
+                        });
+                    }
+                }
+                
+                // 其他项
+                if (bd.fabao?.total) {
+                    items.push({ key: 'fabao', icon: '🔮', label: '法宝', value: bd.fabao.total });
+                }
+                if (bd.skills?.master?.total) {
+                    items.push({ key: 'master', icon: '📖', label: '师门技能', value: bd.skills.master.total });
+                }
+                if (bd.appearance?.mount) {
+                    items.push({ key: 'mount', icon: '🏇', label: '坐骑', value: bd.appearance.mount });
+                }
+                if (bd.appearance?.clothes?.total) {
+                    items.push({ key: 'clothes', icon: '👔', label: '锦衣', value: bd.appearance.clothes.total });
+                }
+                if (bd.appearance?.xiangrui?.total) {
+                    items.push({ key: 'xiangrui', icon: '🦚', label: '祥瑞', value: bd.appearance.xiangrui.total });
+                }
+                if (bd.equipment?.total) {
+                    items.push({ key: 'equip', icon: '🛡️', label: '装备', value: bd.equipment.total });
+                }
+                if (bd.pets?.total) {
+                    items.push({ key: 'pets', icon: '🐉', label: '召唤兽', value: bd.pets.total });
+                }
+                
+                return items;
+            },
+            hasChartData() {
+                return this.breakdownItems.some(i => i.value > 0);
+            },
+            chartItems() {
+                const colors = ['#f0c040','#1890ff','#52c41a','#b37feb','#ff7875','#ffa940','#36cfc9','#ff85c2','#d3f261','#69c0ff'];
+                const items = this.breakdownItems.filter(i => i.value > 0);
+                const total = items.reduce((s, i) => s + i.value, 0);
+                return items.map((item, idx) => ({
+                    ...item,
+                    color: colors[idx % colors.length],
+                    pct: total > 0 ? ((item.value / total) * 100).toFixed(1) : '0',
+                }));
+            },
+        },
+        async mounted() {
+            if (this.$route.query.url) {
+                this.url = this.$route.query.url;
+            }
+            // 优先从 record_id 获取本地已有数据
+            if (this.$route.query.record_id) {
+                await this.fetchFromRecord(this.$route.query.record_id);
+            } else if (this.url) {
+                await this.fetch();
+            }
+        },
+        methods: {
+            formatPrice(v) {
+                if (!v && v !== 0) return '-';
+                v = Number(v);
+                return v >= 10000 ? (v / 10000).toFixed(1) + '万' : (v || 0).toFixed(0);
+            },
+            getErrorLineStyle(line) {
+                if (line && line.startsWith && (line.startsWith('💡') || line.startsWith('   '))) {
+                    return 'color:var(--text-secondary);font-size:12px;margin-top:4px';
+                }
+                return 'font-weight:600';
+            },
+            async fetchFromRecord(recordId) {
+                // 从本地数据库获取已有数据
+                this.loading = true;
+                this.error = '';
+                this.roleData = null;
+                this.evaluation = null;
+                this.parseResult = null;
+                if (this.chart) { this.chart.dispose(); this.chart = null; }
+                try {
+                    const apiUrl = API + '/api/monitor/records/' + recordId + '/detail';
+                    const r = await axios.get(apiUrl);
+                    if (r.data.raw_role_data && r.data.raw_evaluation) {
+                        // 将原始数据转换为前端期望的格式
+                        const raw = r.data.raw_role_data;
+                        const other = raw.other_info || {};
+                        this.roleData = {
+                            ...raw,
+                            // 角色名称
+                            role_name: other.cName || raw.seller_nickname || '未知角色',
+                            // 等级
+                            level: other.iGrade || raw.level || 0,
+                            // 门派名称
+                            school: raw.equip_name || this.schoolMap[other.iSchool] || '未知门派',
+                            // 服务器
+                            server_name: raw.server_name || '未知服务器',
+                            // 售价（转换为元）
+                            selling_price: r.data.selling_price || (raw.price ? raw.price / 100 : 0),
+                            // 转职信息
+                            zhuan_zhi: other.iZhuanZhi ? this.zzMap[other.iZhuanZhi] || 'normal' : 'normal',
+                            // 修炼信息
+                            attack_cultivation: other.iExptSki1 || 0,
+                            defense_cultivation: other.iExptSki2 || 0,
+                            magic_cultivation: other.iExptSki3 || 0,
+                            resist_cultivation: other.iExptSki4 || 0,
+                            lieshu_cultivation: other.iExptSki5 || 0,
+                            pet_attack_control: other.iBeastSki1 || 0,
+                            pet_defense_control: other.iBeastSki2 || 0,
+                            pet_magic_control: other.iBeastSki3 || 0,
+                            pet_resistance_control: other.iBeastSki4 || 0,
+                            // 辅助信息
+                            jiyuan: other.iGoodEvent || 0,
+                            qianyuan_dan: other.iQianYuanDan || 0,
+                            renqi: other.iRenQi || 0,
+                            qiannengguo: other.iQianNengGuo || 0,
+                            xianyu: other.xianyu || 0,
+                            goodness: other.iGoodness || 0,
+                        };
+                        this.evaluation = r.data.raw_evaluation;
+                        // 从 evaluation 提取 breakdown 用于饼图
+                        if (r.data.evaluation_breakdown) {
+                            this.evaluation.breakdown = r.data.evaluation_breakdown;
+                        }
+                        this.$nextTick(() => this.renderChart());
+                    } else {
+                        // 本地数据不足，回退到从 CBG API 获取
+                        this.error = '本地数据不完整，将尝试从藏宝阁获取...';
+                        await this.fetch();
+                    }
+                } catch(e) {
+                    // 获取失败，回退到从 CBG API 获取
+                    this.error = '无法获取本地数据，将尝试从藏宝阁获取...';
+                    await this.fetch();
+                }
+                this.loading = false;
+            },
+            onUrlInput(val) {
+                // 防抖 600ms 检测
+                if (this._urlCheckTimer) clearTimeout(this._urlCheckTimer);
+                if (!val || !val.trim()) { this.urlHint = null; return; }
+                this._urlCheckTimer = setTimeout(() => this.checkUrl(val.trim()), 600);
+            },
+            onUrlPaste(e) {
+                // 粘贴时立即检测（等 DOM 更新后获取最新值）
+                setTimeout(() => {
+                    const v = this.url.trim();
+                    if (v) this.checkUrl(v);
+                }, 50);
+            },
+            async checkUrl(url) {
+                try {
+                    const r = await axios.get(API + '/api/crawl/test-url', { params: { url } });
+                    this.urlHint = r.data;
+                } catch(e) {
+                    this.urlHint = null;
+                }
+            },
+            async fetch() {
+                if (!this.url.trim()) { this.error = '请输入链接'; return; }
+                this.loading = true; this.error = ''; this.roleData = null; this.evaluation = null; this.parseResult = null;
+                if (this.chart) { this.chart.dispose(); this.chart = null; }
+                try {
+                    const r = await axios.get(API + '/api/crawl/parse-url', { params: { url: this.url } });
+                    this.parseResult = r.data;
+                } catch(e) {
+                    this.error = '无法解析链接，请确认是藏宝阁角色链接';
+                    this.loading = false; return;
+                }
+                try {
+                    const r = await axios.post(API + '/api/crawl/evaluate-from-url', { url: this.url });
+                    if (r.data.success) {
+                        this.roleData = r.data.role_data;
+                        this.evaluation = r.data.evaluation;
+                        this.$nextTick(() => this.renderChart());
+                    } else {
+                        this.error = r.data.error || '采集失败';
+                    }
+                } catch(e) {
+                    const detail = e.response?.data?.detail;
+                    if (typeof detail === 'string') {
+                        // 智能提示：分类错误类型
+                        if (detail.includes('商品信息已过期') || detail.includes('已下架')) {
+                            this.error = '❌ 该角色已下架或售出\n💡 提示：链接中的角色已不在售，请换一个当前在售的角色链接';
+                        } else if (detail.includes('登录') || detail.includes('Cookie') || detail.includes('登录')) {
+                            this.error = '⚠️ 账号登录已过期\n💡 请到「首页」重新扫码登录后重试';
+                        } else {
+                            this.error = detail;
+                        }
+                    } else {
+                        this.error = e.message || '请求失败，请检查网络';
+                    }
+                }
+                this.loading = false;
+            },
+            async saveRole() {
+                if (!this.url.trim() || this.saving) return;
+                this.saving = true;
+                try {
+                    const r = await axios.post(API + '/api/crawl/fetch-and-save', { url: this.url.trim() });
+                    if (r.data.success) {
+                        ElMessage.success('✅ 已保存到「已采集角色」');
+                    } else {
+                        ElMessage.error(r.data.error || '保存失败');
+                    }
+                } catch(e) {
+                    ElMessage.error(e.response?.data?.detail || '保存请求失败');
+                }
+                this.saving = false;
+            },
+            renderChart() {
+                if (!this.$refs.chartEl || !this.hasChartData) return;
+                if (this.chart) this.chart.dispose();
+                this.chart = echarts.init(this.$refs.chartEl, 'dark');
+                const data = this.chartItems.map(i => ({ value: i.value, name: i.label, itemStyle: { color: i.color } }));
+                this.chart.setOption({
+                    backgroundColor: 'transparent',
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: (p) => '<b>' + p.name + '</b><br/>¥' + p.value.toLocaleString() + '<br/>' + p.percent.toFixed(1) + '%'
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: ['42%', '72%'],
+                        center: ['50%', '50%'],
+                        data,
+                        label: { show: false },
+                        emphasis: {
+                            itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' }
+                        },
+                    }]
+                });
+            },
+        },
+        beforeUnmount() {
+            if (this.chart) { this.chart.dispose(); this.chart = null; }
+        },
+    };
+
+    // ============ 路由 ============
+    const routes = [
+        { path: '/', component: HomePage },
+        { path: '/crawl', component: CrawlPage },
+        { path: '/monitor', component: MonitorPage },
+    ];
+    const router = VueRouter.createRouter({ routes, history: VueRouter.createWebHashHistory() });
+
+    // ============ 应用 ============
+    const app = Vue.createApp({
+        data() { return { sidebarCollapsed: false }; }
+    });
+    app.use(ElementPlus, { locale: ElementPlusLocaleZhCn });
+    app.use(router);
+    app.mount('#app');
+    </script>
+</body>
+</html>
